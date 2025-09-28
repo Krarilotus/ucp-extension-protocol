@@ -33,7 +33,8 @@ local getCommandOffset = function(commandID)
 end
 
 local _, pGameCore = utils.AOBExtract("A3 I( ? ? ? ? ) 89 5C 24 1C")
-local MAP_TIME_ADDRESS = pGameCore + 0x98
+local _, pMapTime = utils.AOBExtract("8B ? I(? ? ? ?) 66 8B 54 24 1C")
+local MAP_TIME_ADDRESS = pMapTime
 
 
 
