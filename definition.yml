@@ -1,6 +1,13 @@
 name: protocol
-version: 1.0.0
+version: 1.0.1
 type: module
 author: gynt
 meta:
   version: 1.0.0
+tags:
+- tools
+capabilities:
+  files: false
+  code: true
+  configuration: false
+  options: false
