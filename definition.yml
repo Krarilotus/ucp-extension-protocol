@@ -6,8 +6,3 @@ meta:
   version: 1.0.0
 tags:
 - tools
-capabilities:
-  files: false
-  code: true
-  configuration: false
-  options: false
