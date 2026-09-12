@@ -35,7 +35,7 @@ end
 
 function M.capture(extensions,config)
   assert(type(extensions)=='table','Active extensions are unavailable')
-  local files,visited,order,count,total={},{},{},0,0
+  local files,order,count,total={},{},0,0
   local function normalized(path)
     assert(type(path)=='string' and not path:find('[%z\r\n]'),'Invalid admission asset path')
     return path:gsub('\\','/'):gsub('/+$','')
@@ -61,32 +61,16 @@ function M.capture(extensions,config)
     assert(ok and closed,digest or 'Cannot close multiplayer asset')
     files[key]=digest
   end
-  local function walk(path,key,depth)
-    assert(depth<=16,'Multiplayer asset directory nesting is too deep')
-    if visited[path] then return end
-    visited[path]=true
-    count=count+1;assert(count<=50000,'Too many multiplayer asset directories')
-    local present={}
-    for _,file in ipairs(ucp.internal.io.files(path..'/')) do
-      file=normalized(file)
-      assert(file:sub(1,#path+1)==path..'/','Multiplayer asset escaped its parent')
-      present[file]=true;add(file,key..file:sub(#path+1))
-    end
-    for _,child in ipairs(ucp.internal.io.directories(path..'/')) do
-      child=normalized(child)
-      assert(child:sub(1,#path+1)==path..'/','Multiplayer directory escaped its parent')
-      -- Same UCP 3.0.7 archive/folder shadowing rule as Recorder replay-assets.
-      local folder=not present[child..'.zip'] or pcall(ucp.internal.io.files,child..'/')
-      if child:sub(#path+2)~='.git' and folder then walk(child,key..child:sub(#path+1),depth+1) end
-    end
-  end
+  local walk=modules.files:createFileWalker(function(path,relative,key)
+    add(path,key..'/'..relative)
+  end,{excludeDirectories={'.git'}})
   for i,extension in ipairs(extensions) do
     assert(i<=256,'Too many active multiplayer extensions')
     local kind=extension:type()=='ModuleLoader' and 'modules' or 'plugins'
     local key='ucp/'..kind..'/'..extension.name..'-'..extension.version
     order[i]=key
     local root=normalized(ucp.internal.resolveAliasedPath(key..'/'))
-    if #ucp.internal.io.files(root..'/')>0 then walk(root,key,0)
+    if #ucp.internal.io.files(root..'/')>0 then walk(root,key)
     else add(key..'.zip',key..'.zip') end
   end
   local seenOptions={}
@@ -103,7 +87,7 @@ function M.capture(extensions,config)
       if opened and file then assert(file:close());add(path,'option/'..key)
       else
         local ok,children=pcall(ucp.internal.io.files,path..'/')
-        if ok and type(children)=='table' then walk(path,'option/'..key,0) end
+        if ok and type(children)=='table' then walk(path,'option/'..key) end
       end
     end
   end
