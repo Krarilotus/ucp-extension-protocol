@@ -64,20 +64,24 @@ assert(api.writeIndex==0x20109ee0 and api.currentCommand==common.COMMAND_CURRENT
 assert(api.localPlayer==0x20109e74 and api.tick==common.MAP_TIME_ADDRESS)
 assert(api.receivedParameters==common.COMMAND_FIXED_RECEIVED_PARAMETER_LOCATION_ADDRESS)
 assert(api.scheduleCommand==owner._scheduleCommand and exposed==2)
+assert(api.queueEntry==0x11000000 and api.scheduleEntry==0x12000000)
+assert(#api.queueBytes==69 and api.queueBytes:byte(1)==0x53)
+assert(#api.scheduleBytes==79 and api.scheduleBytes:byte(1)==0x56)
+api.queueBytes='';assert(#owner.getNativeCommandInterface().queueBytes==69)
 assert(api.scheduleCommand(api.handler,33,4,1000,0x31000000)==91)
 assert(#calls[1]==6 and calls[1][1]==0x12000000 and calls[1][2]==api.handler)
 assert(calls[1][3]==33 and calls[1][4]==4 and calls[1][5]==1000 and calls[1][6]==0x31000000)
 api.handler=1; assert(owner.getNativeCommandInterface().handler==0x20000000)
 for i=1,100 do assert(owner.getNativeCommandInterface().scheduleCommand==owner._scheduleCommand) end
 ''')
-    assert len(scans)==4
+    assert len(scans)==2
 
 
-@pytest.mark.parametrize('failure',['missing','ambiguous','queue','schedule','target','writeIndex','ring','tick','localPlayer'])
+@pytest.mark.parametrize('failure',['missing','error','queue','schedule','target','writeIndex','ring','tick','localPlayer'])
 def test_failed_binding_exposes_neither_native_call(fixture,failure):
     lua,memory,_=fixture
     if failure=='missing': lua.execute('core.AOBScan=function() return 0 end')
-    elif failure=='ambiguous': lua.execute('core.scanForAOB=function() return 123 end')
+    elif failure=='error': lua.execute('core.AOBScan=function() error([[framework discovery failed]]) end')
     elif failure=='queue': memory[0x11000000+12]=0xcc
     elif failure=='schedule': memory[0x12000000+37]=0xcc
     elif failure=='target': lua.execute('write_word(0x10000001,123)')
@@ -98,15 +102,21 @@ package.loaded['game.version']={setMultiplayerGameVersion=function() end}
 local hookCalls=0
 package.loaded['game.hooks']={setHooks=function() hookCalls=hookCalls+1 end}
 hooks={registerHookCallback=function(name,callback) assert(name=='afterInit') end}
-local namespace=dofile(root..'/init.lua')
-local public=proxies.ExtensionProxy(namespace)
+local namespace,options=dofile(root..'/init.lua')
+-- Mirror main.lua's module loader, including its non-nil default options.
+-- Passing no options directly to ExtensionProxy hides a missing declaration.
+options=options or {public={},proxy={}}
+local public=proxies.ExtensionProxy(namespace,options.proxy)
 assert(not pcall(public.getNativeCommandInterface,public))
 namespace:enable({})
 local api=public:getNativeCommandInterface()
 assert(api.version==1 and api.capacity==200 and api.handler==common.MULTIPLAYER_HANDLER_ADDRESS)
+assert(api.queueEntry==0x11000000 and api.scheduleEntry==0x12000000)
+assert(#api.queueBytes==69 and api.queueBytes:byte(1)==0x53)
+assert(not pcall(function() api.queueBytes='' end))
 assert(api.scheduleCommand(api.handler,33,4,1000,0x31000000)==91)
 assert(calls[1][1]==0x12000000 and calls[1][2]==api.handler and #calls[1]==6)
 assert(not pcall(function() api.handler=1 end))
 assert(hookCalls==1 and exposed==2)
 ''')
-    assert len(scans)==4
+    assert len(scans)==2

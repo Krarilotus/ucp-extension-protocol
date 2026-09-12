@@ -46,12 +46,15 @@ package.loaded.core=core
         0x23547d8,0x4803e0,0x489210,0x24baadc,0x2a7b2a8,0x166370)
     handler,schedule,queue,player,tick,write_offset=expected
     assert exposures==[(queue,2,1),(schedule,5,1)]
+    assert (api.queueEntry,api.scheduleEntry)==(queue,schedule)
+    assert lua.eval("function(api) return api.queueBytes:byte(1,#api.queueBytes) end")(api)==tuple(read(queue,69))
+    assert lua.eval("function(api) return api.scheduleBytes:byte(1,#api.scheduleBytes) end")(api)==tuple(read(schedule,79))
     assert (api.version,api.handler,api.ring,api.stride,api.capacity)==(1,handler,handler+0x3c67c,1272,200)
     assert (api.writeIndex,api.currentCommand,api.localPlayer,api.tick,api.receivedParameters)==(
         handler+write_offset,handler+0x2d824,player,tick,handler+0xcdc)
-    assert len(scans)-before==4
+    assert len(scans)-before==2
     for _ in range(100): owner.getNativeCommandInterface()
-    assert len(scans)-before==4
+    assert len(scans)-before==2
     interface_patterns=[p for p,start in scans[before:] if start is None]
     negative=0
     def rejected():
@@ -65,9 +68,10 @@ package.loaded.core=core
         g.core.AOBScan=lambda p:address if p==pattern else scan(p)
         rejected(); negative+=1
         g.core.AOBScan=scan; image[address-base]=saved
-        g.core.scanForAOB=lambda p,start:address+0x1000 if p==pattern else scan(p,start)
+        assert scan(pattern,address+1)==0, 'non-unique fixture context'
+        g.core.AOBScan=lua.eval('function() error("framework discovery failed") end')
         rejected(); negative+=1
-        g.core.scanForAOB=scan
+        g.core.AOBScan=scan
     for address in (queue,queue+12,schedule+37):
         saved=image[address-base]; image[address-base]=0xcc
         rejected(); negative+=1
@@ -76,7 +80,7 @@ package.loaded.core=core
         saved=common[key]; common[key]=123
         rejected(); negative+=1; common[key]=saved
     return dict(variant=variant,referenceSha256=hashlib.sha256(raw).hexdigest(),
-                numericFields=10,ownerDiscoveryCalls=4,negativeCases=negative,
+                numericFields=12,ownerDiscoveryCalls=2,negativeCases=negative,
                 scope='Private image/framework extraction; exposed native calls are stand-ins; no game.')
 
 

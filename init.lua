@@ -270,4 +270,4 @@ function namespace:invokeProtocol(protocol, ...)
   error(string.format("illegal protocol number: %s", protocolNumber))
 end
 
-return namespace
+return namespace, { proxy = { ignored = {} } }

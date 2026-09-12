@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<module>
+  <files>
+    <file src="*.lua" target="." />
+    <file src="definition.yml" target="." />
+    <file src="LICENSE" target="." />
+    <file src="README.md" target="." />
+    <file src="admission" target="." />
+    <file src="game" target="." />
+    <file src="helpers" target="." />
+    <file src="protocols" target="." />
+    <file src="locale" target="." />
+  </files>
+</module>

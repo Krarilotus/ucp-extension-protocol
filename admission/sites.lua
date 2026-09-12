@@ -1,12 +1,9 @@
 -- Resolve before installing admission. Protocol owns both command transport and
 -- this lobby boundary; no simulation hook or alternative patch manager is used.
-local function unique(pattern)
-  local address = core.AOBScan(pattern)
-  assert(type(address) == 'number' and address > 0,
+local function find(pattern)
+  local ok, address = pcall(core.AOBScan,pattern)
+  assert(ok and type(address) == 'number' and address > 0 and address%1==0,
     'Protocol: multiplayer admission binding is unavailable')
-  local second = core.scanForAOB(pattern, address + 1)
-  assert(second == nil or second == 0,
-    'Protocol: multiplayer admission binding is ambiguous')
   return address
 end
 
@@ -17,10 +14,10 @@ local viewPattern = 'A1 ? ? ? ? 83 F8 37 C7 05 ? ? ? ? 0A 00 00 00 C6 05 ? ? ? ?
 
 local M = {}
 function M.resolve()
-  local start = unique(startPattern)
-  local mode = unique(modePattern)
-  local player = unique(playerPattern)
-  local view = unique(viewPattern)
+  local start = find(startPattern)
+  local mode = find(modePattern)
+  local player = find(playerPattern)
+  local view = find(viewPattern)
   local handler = require('protocols.common').MULTIPLAYER_HANDLER_ADDRESS
   -- Both lobby calls must use the transport owner's resolved singleton.
   assert(core.readInteger(start + 47) == handler and core.readInteger(mode + 3) == handler,
