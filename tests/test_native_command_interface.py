@@ -102,8 +102,11 @@ package.loaded['game.version']={setMultiplayerGameVersion=function() end}
 local hookCalls=0
 package.loaded['game.hooks']={setHooks=function() hookCalls=hookCalls+1 end}
 hooks={registerHookCallback=function(name,callback) assert(name=='afterInit') end}
-local namespace=dofile(root..'/init.lua')
-local public=proxies.ExtensionProxy(namespace)
+local namespace,options=dofile(root..'/init.lua')
+-- Mirror main.lua's module loader, including its non-nil default options.
+-- Passing no options directly to ExtensionProxy hides a missing declaration.
+options=options or {public={},proxy={}}
+local public=proxies.ExtensionProxy(namespace,options.proxy)
 assert(not pcall(public.getNativeCommandInterface,public))
 namespace:enable({})
 local api=public:getNativeCommandInterface()
