@@ -9,12 +9,14 @@ local interface = require("game.interface")
 local gameVersion = require("game.version")
 
 local PROTOCOL_REGISTRY = globals.PROTOCOL_REGISTRY
+local enabled=false
 
 ---@class protocol
 local namespace = {
   enable = function(self, config)
 
     require("game.hooks").setHooks()
+    enabled=true
 
     hooks.registerHookCallback("afterInit", function()
       gameVersion.setMultiplayerGameVersion()
@@ -51,6 +53,12 @@ function namespace:registerMultiplayerAdmission(name, capture, notify)
 end
 
 function namespace:multiplayerAdmissionVersion() return 1 end
+
+---Reuse the transport owner's native scheduler and command-buffer metadata.
+function namespace:getNativeCommandInterface()
+  assert(enabled,'Enable Protocol before requesting its native command interface')
+  return interface.getNativeCommandInterface()
+end
 
 ---Register a custom protocol. Note that an IMMEDIATE protocol (used to communicate information and events outside
 ---of the simulation) can only invoke another IMMEDIATE protocol, but never a LOCKSTEP protocol.

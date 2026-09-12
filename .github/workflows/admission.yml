@@ -10,6 +10,12 @@ jobs:
           repository: UnofficialCrusaderPatch/extension-files
           ref: 981b1becbc01fb282ead0415074f696bfefca07a
           path: files-reference
+      - uses: actions/checkout@v4
+        with:
+          repository: UnofficialCrusaderPatch/UnofficialCrusaderPatch3
+          ref: 02a7a6bc8ab956a91fc752e8c8ed215c149855e7
+          path: framework-reference
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -17,3 +23,4 @@ jobs:
       - run: python -m pytest tests -q
         env:
           UCP_FILES_TEST_ROOT: files-reference
+          UCP_FRAMEWORK_PROXIES: framework-reference/content/ucp/code/extensions/proxies.lua
