@@ -5,8 +5,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: UnofficialCrusaderPatch/extension-files
+          ref: 981b1becbc01fb282ead0415074f696bfefca07a
+          path: files-reference
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: python -m pip install pytest lupa
-      - run: python -m pytest tests/test_admission.py tests/test_admission_bindings.py -q
+      - run: python -m pytest tests -q
+        env:
+          UCP_FILES_TEST_ROOT: files-reference
