@@ -17,14 +17,15 @@ local function verify(address,pattern,name)
   for i,token in ipairs(tokens) do
     assert(token=='?' or bytes[i]==tonumber(token,16),'Protocol has a modified or occupied '..name)
   end
+  return string.char((table.unpack or unpack)(bytes))
 end
 
 local caller=unique(queueCaller,'command queue caller')
 verify(caller,queueCaller,'command queue caller')
 local queue=caller+5+core.readInteger(caller+1)
-verify(queue,queuePattern,'command queue')
+local queueContext=verify(queue,queuePattern,'command queue')
 local schedule=unique(schedulePattern,'received command scheduler')
-verify(schedule,schedulePattern,'received command scheduler')
+local scheduleContext=verify(schedule,schedulePattern,'received command scheduler')
 local handler=common.MULTIPLAYER_HANDLER_ADDRESS
 assert(type(handler)=='number' and handler>=0x10000 and handler<0x7fe00000,
   'Protocol has an invalid command handler pointer')
@@ -52,7 +53,8 @@ local function getNativeCommandInterface()
     writeIndex=handler+writeOffset,currentCommand=common.COMMAND_CURRENT_ID_ADDRESS,
     localPlayer=localPlayer,tick=common.MAP_TIME_ADDRESS,
     receivedParameters=common.COMMAND_FIXED_RECEIVED_PARAMETER_LOCATION_ADDRESS,
-    scheduleCommand=scheduleCommand,queueEntry=queue,scheduleEntry=schedule}
+    scheduleCommand=scheduleCommand,queueEntry=queue,scheduleEntry=schedule,
+    queueBytes=queueContext,scheduleBytes=scheduleContext}
 end
 return {_queueCommand=queueCommand,_scheduleCommand=scheduleCommand,
   getNativeCommandInterface=getNativeCommandInterface}

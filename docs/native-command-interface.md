@@ -25,6 +25,11 @@ avoids another queue/scheduler resolver in that consumer. Hooking remains a
 separate responsibility: verify the full relevant context and occupied sites,
 retain Protocol's dispatch hooks, and preserve the original-call contract.
 Ordinary command submission should continue to use the existing callable.
+`queueBytes` / `scheduleBytes` are immutable binary strings containing the
+full instruction contexts verified by Protocol. Consumers recheck these at
+the corresponding entries before hooking instead of copying the owner's
+signature or accepting changed code. Strings retain their length through the
+framework's table proxy, which does not implement a table-length metamethod.
 
 Callers own authority, payload/category validation, command-boundary admission
 and error handling. This low-level API does not make immediate categories safe

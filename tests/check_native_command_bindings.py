@@ -47,6 +47,8 @@ package.loaded.core=core
     handler,schedule,queue,player,tick,write_offset=expected
     assert exposures==[(queue,2,1),(schedule,5,1)]
     assert (api.queueEntry,api.scheduleEntry)==(queue,schedule)
+    assert lua.eval("function(api) return api.queueBytes:byte(1,#api.queueBytes) end")(api)==tuple(read(queue,69))
+    assert lua.eval("function(api) return api.scheduleBytes:byte(1,#api.scheduleBytes) end")(api)==tuple(read(schedule,79))
     assert (api.version,api.handler,api.ring,api.stride,api.capacity)==(1,handler,handler+0x3c67c,1272,200)
     assert (api.writeIndex,api.currentCommand,api.localPlayer,api.tick,api.receivedParameters)==(
         handler+write_offset,handler+0x2d824,player,tick,handler+0xcdc)
