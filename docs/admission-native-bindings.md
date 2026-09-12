@@ -22,8 +22,9 @@ transport for messages. AIC Tactics does not install this hook.
 
 Resolution occurs once when the first provider loads `admission.native`, before
 patch installation. Four identifying instruction contexts use framework cached
-scans; a subsequent framework scan detects a second occurrence. Missing,
-ambiguous or conflicting bindings fail before patching; no reference-address
+scans. Source 1.1.6 removes the extra full-process duplicate scan and uses
+only the cached AoB API shipped with UCP 3.0.7. Missing, invalid or conflicting
+bindings fail before patching; no reference-address
 fallback or executable hash whitelist exists in production. No scan occurs in
 roster reads, admission callbacks or simulation ticks.
 
@@ -75,3 +76,8 @@ python tests/check_admission_bridge.py --reference <licensed-extreme-exe> --vari
 These are native-instruction component tests, not real network, save/load,
 replay, game-speed or complete AIC/Extreme acceptance. The rest of AIC Tactics
 still requires its own address and layout correction.
+
+Signature uniqueness is verified against supported images in offline fixtures.
+Stock framework discovery returns the first match; this does not promise an
+exhaustive runtime duplicate search on arbitrary modified executables. Native
+metadata, API and wire formats are unchanged.

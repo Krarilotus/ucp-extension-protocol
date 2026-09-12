@@ -74,14 +74,14 @@ assert(calls[1][3]==33 and calls[1][4]==4 and calls[1][5]==1000 and calls[1][6]=
 api.handler=1; assert(owner.getNativeCommandInterface().handler==0x20000000)
 for i=1,100 do assert(owner.getNativeCommandInterface().scheduleCommand==owner._scheduleCommand) end
 ''')
-    assert len(scans)==4
+    assert len(scans)==2
 
 
-@pytest.mark.parametrize('failure',['missing','ambiguous','queue','schedule','target','writeIndex','ring','tick','localPlayer'])
+@pytest.mark.parametrize('failure',['missing','error','queue','schedule','target','writeIndex','ring','tick','localPlayer'])
 def test_failed_binding_exposes_neither_native_call(fixture,failure):
     lua,memory,_=fixture
     if failure=='missing': lua.execute('core.AOBScan=function() return 0 end')
-    elif failure=='ambiguous': lua.execute('core.scanForAOB=function() return 123 end')
+    elif failure=='error': lua.execute('core.AOBScan=function() error([[framework discovery failed]]) end')
     elif failure=='queue': memory[0x11000000+12]=0xcc
     elif failure=='schedule': memory[0x12000000+37]=0xcc
     elif failure=='target': lua.execute('write_word(0x10000001,123)')
@@ -116,4 +116,4 @@ assert(calls[1][1]==0x12000000 and calls[1][2]==api.handler and #calls[1]==6)
 assert(not pcall(function() api.handler=1 end))
 assert(hookCalls==1 and exposed==2)
 ''')
-    assert len(scans)==4
+    assert len(scans)==2

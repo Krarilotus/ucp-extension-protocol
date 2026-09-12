@@ -3,11 +3,10 @@ local queueCaller='E8 ? ? ? ? 8B ? ? ? ? ? 8B 4C 24 10 01 ? ? ? ? ? 03 C8 3B ? ?
 local queuePattern='53 56 8B F1 8B 86 ? ? ? ? 89 86 24 D8 02 00 69 C0 F8 04 00 00 57 8D 84 30 86 C6 03 00 50 33 FF 57 68 EC 04 00 00 B9 ? ? ? ? E8 ? ? ? ? 8B 8E 24 D8 02 00 69 C9 F8 04 00 00 C6 84 31 85 C6 03 00 01'
 local schedulePattern='56 8B F1 81 BE ? ? ? ? C8 00 00 00 0F 8D 15 02 00 00 80 7C 24 08 4D 75 35 8B 44 24 0C 83 05 ? ? ? ? 28 50 E8 ? ? ? ? 3B 05 ? ? ? ? 75 1C 8B 0D ? ? ? ? 8B 96 24 D8 02 00 83 C1 01 69 D2 F8 04 00 00 89 8C 32 7C C6 03 00'
 
-local function unique(pattern,name)
+local function find(pattern,name)
   local ok,address=pcall(core.AOBScan,pattern)
-  assert(ok and type(address)=='number' and address>0,'Protocol cannot resolve '..name)
-  local second=core.scanForAOB(pattern,address+1)
-  assert(second==nil or second==0,'Protocol has an ambiguous '..name)
+  assert(ok and type(address)=='number' and address>0 and address%1==0,
+    'Protocol cannot resolve '..name)
   return address
 end
 local function verify(address,pattern,name)
@@ -20,11 +19,11 @@ local function verify(address,pattern,name)
   return string.char((table.unpack or unpack)(bytes))
 end
 
-local caller=unique(queueCaller,'command queue caller')
+local caller=find(queueCaller,'command queue caller')
 verify(caller,queueCaller,'command queue caller')
 local queue=caller+5+core.readInteger(caller+1)
 local queueContext=verify(queue,queuePattern,'command queue')
-local schedule=unique(schedulePattern,'received command scheduler')
+local schedule=find(schedulePattern,'received command scheduler')
 local scheduleContext=verify(schedule,schedulePattern,'received command scheduler')
 local handler=common.MULTIPLAYER_HANDLER_ADDRESS
 assert(type(handler)=='number' and handler>=0x10000 and handler<0x7fe00000,

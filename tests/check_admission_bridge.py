@@ -203,11 +203,13 @@ for pattern, address in list(patterns_seen.items()):
     ok, _ = lua.eval('pcall')(resolver.resolve)
     assert not ok, ('missing binding accepted', pattern)
     negative_cases += 1
-    length = len(pattern.split())
-    image = original_image + original_image[offset:offset+length]
+    image = original_image
+    assert scan(pattern,address+1) in (None,0), ('non-unique fixture context',pattern)
+    g.core.AOBScan=lua.eval('function() error("framework discovery failed") end')
     ok, message = lua.eval('pcall')(resolver.resolve)
-    assert not ok and 'ambiguous' in message, ('duplicate binding accepted', pattern)
+    assert not ok and 'unavailable' in message, ('framework failure accepted',pattern)
     negative_cases += 1
+    g.core.AOBScan=scan
 image = original_image
 for offset in (0, 2, 8):
     address = expected['start'] + offset
