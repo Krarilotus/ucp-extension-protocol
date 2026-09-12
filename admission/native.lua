@@ -1,6 +1,9 @@
 local M={}
-local START,RETURN,REJECT=0x44280D,0x442813,0x442693
-local MODE,HOST,PLAYER,HANDLES,VIEW=0x191DD80,0x191DEF8,0x1A275DC,0x191DE10,0x1FE7D1C
+local resolver=require('admission.sites')
+local sites=resolver.resolve()
+local START,RETURN,REJECT=sites.start,sites.resume,sites.reject
+local MODE,HOST,PLAYER,HANDLES,VIEW=sites.mode,sites.host,sites.player,sites.handles,sites.view
+local installed=false
 
 function M.roster()
   local result={}
@@ -14,12 +17,10 @@ function M.inLobby()
 end
 
 function M.install(check)
-  -- This site precedes all native Start checks and the recorder's later seed
-  -- observer at 0x442877. No command handler or simulation tick is replaced.
-  local expected={0x39,0x3D,0xF8,0xDE,0x91,0x01,0x0F,0x84,0x7A,0xFE,0xFF,0xFF}
-  for i,value in ipairs(expected) do
-    assert(core.readByte(START+i-1)==value,'Protocol: unsupported or modified SHC 1.41 Start owner')
-  end
+  assert(not installed,'Protocol: multiplayer admission is already installed')
+  -- Preserve the host comparison and its original conditional branch. This
+  -- boundary precedes the native seed call observed by Recorder.
+  resolver.verify(sites)
   local result=core.allocate(4,true)
   local callback=core.allocateCode({0x90,0x90,0x90,0x90,0x90,0xC3})
   core.detourCode(function(registers)
@@ -54,5 +55,6 @@ function M.install(check)
     jmp REJECT
   ]],{MODE=MODE,HOST=HOST,CALLBACK=callback,RESULT=result,RETURN=RETURN,REJECT=REJECT},bridge))
   core.writeCode(START,{0xE9,bridge-START-5,0x90})
+  installed=true
 end
 return M

@@ -15,11 +15,15 @@ This is content agreement, not protection against deliberately modified clients.
 All peers must use the same extension content, order and configuration; unrelated
 local configuration differences can conservatively reject admission.
 
-On a multiplayer host's Start action, the native lobby path at SHC 1.41
-`0x44280D` checks agreement before its existing readiness/map checks, RNG seed
-at `0x44287C`, or start command 11 at `0x4428D2`. Single-player and spectator
-paths retain their original instructions. Recorder's `0x442877` observer is
-untouched. The original host/readiness/launch owners still perform the start.
+On a multiplayer host's Start action, admission checks agreement before the
+existing readiness/map checks, RNG seed or start command 11. Single-player and
+spectator paths retain their original instructions. The original
+host/readiness/launch owners still perform the start.
+
+Version 1.1.1 replaces the fixed SHC binding from 1.1.0 with framework AoB
+discovery. See [native binding verification](admission-native-bindings.md) for
+resolution, ownership and exact SHC/Extreme component evidence. Real two-peer
+acceptance remains outstanding.
 
 One 76-byte IMMEDIATE message carries kind, request serial, host slot, complete
 SHA256 and eight native transport handles. Every connected human slot must reply
