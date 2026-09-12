@@ -52,7 +52,7 @@ local function getNativeCommandInterface()
     writeIndex=handler+writeOffset,currentCommand=common.COMMAND_CURRENT_ID_ADDRESS,
     localPlayer=localPlayer,tick=common.MAP_TIME_ADDRESS,
     receivedParameters=common.COMMAND_FIXED_RECEIVED_PARAMETER_LOCATION_ADDRESS,
-    scheduleCommand=scheduleCommand}
+    scheduleCommand=scheduleCommand,queueEntry=queue,scheduleEntry=schedule}
 end
 return {_queueCommand=queueCommand,_scheduleCommand=scheduleCommand,
   getNativeCommandInterface=getNativeCommandInterface}

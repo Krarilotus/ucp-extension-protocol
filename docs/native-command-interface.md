@@ -17,6 +17,15 @@ write/current indices, local player, tick and receive buffer, plus the existing
 The owner verifies queue/scheduler contexts and cross-checks decoded operands
 against its shared command metadata. No new command hook is installed.
 
+Protocol 1.1.4 adds `queueEntry` and `scheduleEntry` to version1 metadata. They
+are the already-resolved native entries backing the owner callables, not new
+lookups. Recorder's queue suppression and payload-copy guards need to validate
+their existing hook spans within these functions. Exposing the owner entries
+avoids another queue/scheduler resolver in that consumer. Hooking remains a
+separate responsibility: verify the full relevant context and occupied sites,
+retain Protocol's dispatch hooks, and preserve the original-call contract.
+Ordinary command submission should continue to use the existing callable.
+
 Callers own authority, payload/category validation, command-boundary admission
 and error handling. This low-level API does not make immediate categories safe
 to replay or permit scheduling from an unsynchronized multiplayer context.
@@ -28,6 +37,6 @@ Validation: 42 portable tests pass, including relocated Lua 5.4/LuaJIT bindings,
 actual framework proxy behavior, enabled lifecycle, unchanged scheduler
 arguments and zero repeat scans. Each private original SHC/Extreme image and
 each official Firefly EFIGS/Polish 1.41 pair passes the actual common/framework
-extraction path, ten numeric fields and thirteen negative cases. Native calls
+extraction path, twelve numeric fields and thirteen negative cases. Native calls
 are stand-ins in this binding check. Original-instruction replay scheduling and
 live multiplayer/replay composition remain consumer acceptance work.

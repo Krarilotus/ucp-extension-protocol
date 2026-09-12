@@ -46,6 +46,7 @@ package.loaded.core=core
         0x23547d8,0x4803e0,0x489210,0x24baadc,0x2a7b2a8,0x166370)
     handler,schedule,queue,player,tick,write_offset=expected
     assert exposures==[(queue,2,1),(schedule,5,1)]
+    assert (api.queueEntry,api.scheduleEntry)==(queue,schedule)
     assert (api.version,api.handler,api.ring,api.stride,api.capacity)==(1,handler,handler+0x3c67c,1272,200)
     assert (api.writeIndex,api.currentCommand,api.localPlayer,api.tick,api.receivedParameters)==(
         handler+write_offset,handler+0x2d824,player,tick,handler+0xcdc)
@@ -76,7 +77,7 @@ package.loaded.core=core
         saved=common[key]; common[key]=123
         rejected(); negative+=1; common[key]=saved
     return dict(variant=variant,referenceSha256=hashlib.sha256(raw).hexdigest(),
-                numericFields=10,ownerDiscoveryCalls=4,negativeCases=negative,
+                numericFields=12,ownerDiscoveryCalls=4,negativeCases=negative,
                 scope='Private image/framework extraction; exposed native calls are stand-ins; no game.')
 
 
