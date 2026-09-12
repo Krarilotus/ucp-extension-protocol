@@ -44,6 +44,14 @@ end
 
 local knownProtocolTypes = require("game.knownProtocolTypes")
 
+---Register a lobby fingerprint provider. Capture must freeze its configuration
+---and return a lowercase SHA256. It is never called from simulation ticks.
+function namespace:registerMultiplayerAdmission(name, capture, notify)
+  return require('admission.init').register(self, name, capture, notify)
+end
+
+function namespace:multiplayerAdmissionVersion() return 1 end
+
 ---Register a custom protocol. Note that an IMMEDIATE protocol (used to communicate information and events outside
 ---of the simulation) can only invoke another IMMEDIATE protocol, but never a LOCKSTEP protocol.
 ---@param extension string name of the extension
