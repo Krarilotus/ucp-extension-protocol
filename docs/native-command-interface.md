@@ -31,7 +31,7 @@ the corresponding entries before hooking instead of copying the owner's
 signature or accepting changed code. Strings retain their length through the
 framework's table proxy, which does not implement a table-length metamethod.
 
-Protocol 1.1.7 explicitly declares an empty proxy exclusion list. Stock UCP
+Protocol 1.1.8 explicitly declares an empty proxy exclusion list. Stock UCP
 3.0.7 otherwise supplies an empty options object, whose missing `ignored` list
 raises an error when this first table-returning API is called. The result stays
 read-only; no proxy bypass or framework update is needed. The regression uses
