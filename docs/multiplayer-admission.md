@@ -6,7 +6,7 @@ freezes its settings and returns their lowercase SHA256. Register before
 `afterInit`; no provider may be added after the first admission exchange.
 Without a provider, existing Protocol behavior and native Start remain unchanged.
 
-At startup, the framework VFS and streaming SHA256 fingerprint active extension
+On the first admission check, the framework VFS and streaming SHA256 fingerprint active extension
 files, their load order, referenced option files/directories and the framework
 version file. Directory/archive shadowing follows Recorder's existing
 `code/replay-assets.lua` rule (source aaa3e82). The full resolved configuration

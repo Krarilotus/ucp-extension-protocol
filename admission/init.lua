@@ -1,7 +1,8 @@
 local M={providers={},installed=false}
 local function identity()
   local content=require('admission.content')
-  assert(M.contentHash,'Multiplayer content fingerprint is unavailable; restart the game')
+  -- Hashed on the first lobby admission check and cached for the session.
+  M.contentHash=M.contentHash or content.capture(allActiveExtensions,configFinal)
   local names={}
   for name in pairs(M.providers) do names[#names+1]=name end
   table.sort(names)
@@ -73,9 +74,6 @@ function M.register(protocol,name,capture,notify)
       execute=function(self,meta) consensus.receive(meta.player,read(meta)) end,
     })
     M.installed=true
-    hooks.registerHookCallback('afterInit',function()
-      M.contentHash=require('admission.content').capture(allActiveExtensions,configFinal)
-    end)
   end
   M.providers[name]={capture=capture,notify=notify}
 end
