@@ -29,7 +29,7 @@ function M.new(adapter)
     roster=copyRoster(roster)
     assert(roster[localPlayer]~=-1,'Local lobby transport is unavailable')
     local digest=adapter.identity()
-    assert(hash(digest),'Invalid multiplayer content fingerprint')
+    assert(hash(digest),'Invalid multiplayer admission fingerprint')
     return localPlayer,roster,digest
   end
   local function request(round)
@@ -68,7 +68,7 @@ function M.new(adapter)
           or type(sender)~='number' or sender<1 or sender>8 or sender~=math.floor(sender)
           or type(message.host)~='number' or message.host<1 or message.host>8
           or message.host~=math.floor(message.host) then return false end
-      -- Ignore non-lobby traffic without freezing a provider or hashing content.
+      -- Ignore non-lobby traffic without freezing a provider.
       if not adapter.inLobby() then return false end
       local localPlayer,current=adapter.roster()
       if not sameRoster(current,message.roster) or current[sender]==-1 then return false end

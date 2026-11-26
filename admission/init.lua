@@ -7,11 +7,14 @@ local function providerNames()
   return names
 end
 local function identity()
-  -- Hashed on the first lobby admission check and cached for the session.
-  M.contentHash=M.contentHash or content.capture(allActiveExtensions,configFinal)
+  local extensions={}
+  for i,extension in ipairs(assert(allActiveExtensions,'Active extensions are unavailable')) do
+    extensions[i]=extension.name..'-'..extension.version
+  end
   local names=providerNames()
-  local values={'protocol-admission-v1\n',M.contentHash,'\n',
-    content.canonical(assert(configFinal,'Resolved multiplayer settings are unavailable')),'\n'}
+  local values={'protocol-admission-v2\n',content.canonical({
+    framework=data.version.known_version_string,extensions=extensions,
+    config=assert(configFinal,'Resolved multiplayer settings are unavailable')}),'\n'}
   for _,name in ipairs(names) do
     local digest=M.providers[name].capture()
     assert(type(digest)=='string' and #digest==64 and digest:match('^[0-9a-f]+$'),

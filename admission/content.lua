@@ -1,5 +1,3 @@
--- Only startup/lobby work. Use UCP's VFS and streaming SHA256 implementation;
--- no filesystem reads, hashing or admission polling enters the simulation loop.
 local M={}
 -- The digest is compared between PCs, so strings sort byte by byte (Lua's `<` uses
 -- strcoll) and numbers are not formatted as decimals; the framework's setup digest
@@ -47,68 +45,5 @@ function M.canonical(value)
     error('Unsupported multiplayer setting type: '..kind)
   end
   return encode(value,0)
-end
-
-function M.capture(extensions,config)
-  assert(type(extensions)=='table','Active extensions are unavailable')
-  local files,order,count,total={},{},0,0
-  local function normalized(path)
-    assert(type(path)=='string' and not path:find('[%z\r\n]'),'Invalid admission asset path')
-    return path:gsub('\\','/'):gsub('/+$','')
-  end
-  local function add(path,key)
-    if files[key] then return end
-    count=count+1;assert(count<=50000,'Too many multiplayer assets')
-    local f=assert(io.open(path,'rb'),'Missing multiplayer asset: '..path)
-    local ok,digest=pcall(function()
-      local feed=sha.sha256()
-      local size=0
-      while true do
-        local chunk,reason=f:read(65536)
-        assert(not reason,reason)
-        if not chunk or #chunk==0 then break end
-        size=size+#chunk;total=total+#chunk
-        assert(size<=1073741824 and total<=4294967296,'Multiplayer assets exceed admission bounds')
-        feed(chunk)
-      end
-      return feed()
-    end)
-    local closed=f:close()
-    assert(ok and closed,digest or 'Cannot close multiplayer asset')
-    files[key]=digest
-  end
-  local walk=modules.files:createFileWalker(function(path,relative,key)
-    add(path,key..'/'..relative)
-  end,{excludeDirectories={'.git'}})
-  for i,extension in ipairs(extensions) do
-    assert(i<=256,'Too many active multiplayer extensions')
-    local kind=extension:type()=='ModuleLoader' and 'modules' or 'plugins'
-    local key='ucp/'..kind..'/'..extension.name..'-'..extension.version
-    order[i]=key
-    local root=normalized(ucp.internal.resolveAliasedPath(key..'/'))
-    if #ucp.internal.io.files(root..'/')>0 then walk(root,key)
-    else add(key..'.zip',key..'.zip') end
-  end
-  local seenOptions={}
-  local function options(value,depth)
-    assert(depth<=32,'Multiplayer settings nesting is too deep')
-    if type(value)=='table' then
-      assert(not seenOptions[value],'Cyclic multiplayer settings');seenOptions[value]=true
-      for _,item in pairs(value) do options(item,depth+1) end
-      seenOptions[value]=nil
-    elseif type(value)=='string' and value:find('[/\\]') and not value:find('[%z\r\n]') then
-      local key=normalized(value)
-      local path=normalized(ucp.internal.resolveAliasedPath(key))
-      local opened,file=pcall(io.open,path,'rb')
-      if opened and file then assert(file:close());add(path,'option/'..key)
-      else
-        local ok,children=pcall(ucp.internal.io.files,path..'/')
-        if ok and type(children)=='table' then walk(path,'option/'..key) end
-      end
-    end
-  end
-  options(config,0)
-  add('ucp/ucp-version.yml','ucp/ucp-version.yml')
-  return sha.sha256(M.canonical({order=order,files=files}))
 end
 return M

@@ -1,4 +1,4 @@
-# Multiplayer content admission
+# Multiplayer admission
 
 `registerMultiplayerAdmission(name, capture, notify)` adds a provider;
 `multiplayerAdmissionVersion()` returns 1. A provider's `capture` freezes its
@@ -9,18 +9,13 @@ Protocol and the native Start action behave as without admission.
 
 ## What is compared
 
-On the first admission check of a session, Protocol hashes the files of every
-active extension (through the Files module's traversal), their load order, files
-and folders named in option values, and `ucp/ucp-version.yml`. The result is kept
-for the session. The full resolved configuration and the sorted provider names
-and digests are added at every check. Strings sort byte by byte and numbers are
-encoded in binary, so PCs with different system locales agree. This is content
-agreement, not protection against deliberately modified clients; unrelated local
-configuration differences can also block Start.
-
-The first check hashes everything once with the framework's Lua SHA256, so the
-host's first Start in a session can wait as long as that takes (about 80 seconds
-for some 300 MB of active extensions). Later checks reuse the result.
+At every admission check, Protocol compares the framework version, the name and
+version of every active extension in load order, the full resolved configuration
+and the sorted provider names and digests. No extension files are read or
+hashed. Strings sort byte by byte and numbers are encoded in binary, so PCs with
+different system locales agree. This is setup agreement, not protection against
+deliberately modified clients; unrelated local configuration differences can also
+block Start.
 
 ## Start
 
@@ -47,5 +42,4 @@ the patch; the bridge keeps registers, stack and flags, runs the original host
 comparison once and keeps its branch. If a site is missing or differs, admission
 logs a warning and stays off; the command transport keeps working.
 
-Limits: 32 providers, 256 extensions, 50,000 files, 1 GiB per file, 4 GiB in
-total; 100,000 configuration values, nested at most 32 deep.
+Limits: 32 providers; 100,000 configuration values, nested at most 32 deep.
