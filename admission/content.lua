@@ -1,6 +1,21 @@
 -- Only startup/lobby work. Use UCP's VFS and streaming SHA256 implementation;
 -- no filesystem reads, hashing or admission polling enters the simulation loop.
 local M={}
+-- The digest is compared between PCs, so strings sort byte by byte (Lua's `<` uses
+-- strcoll) and numbers are not formatted as decimals; the framework's setup digest
+-- follows the same rules.
+local function lessBytes(a,b)
+  for i=1,math.min(#a,#b) do
+    local x,y=a:byte(i),b:byte(i)
+    if x~=y then return x<y end
+  end
+  return #a<#b
+end
+local function number(v)
+  local integer=math.tointeger(v)
+  if integer then return 'i'..string.format('%d',integer) end
+  return 'f'..(string.pack('<d',v):gsub('.',function(c) return string.format('%02x',c:byte()) end))
+end
 function M.canonical(value)
   local count,seen=0,{}
   local function encode(v,depth)
@@ -16,6 +31,7 @@ function M.canonical(value)
       end
       table.sort(keys,function(a,b)
         if type(a)~=type(b) then return type(a)<type(b) end
+        if type(a)=='string' then return lessBytes(a,b) end
         return a<b
       end)
       local items={'t'..#keys..':'}
@@ -25,7 +41,7 @@ function M.canonical(value)
       assert(#v<=1048576,'Multiplayer setting is too long');return 's'..#v..':'..v
     elseif kind=='number' then
       assert(v==v and v~=math.huge and v~=-math.huge,'Invalid multiplayer setting number')
-      local text=string.format('%.17g',v);return 'n'..#text..':'..text
+      local text=number(v);return 'n'..#text..':'..text
     elseif kind=='boolean' then return v and 'b1' or 'b0'
     elseif kind=='nil' then return 'z' end
     error('Unsupported multiplayer setting type: '..kind)

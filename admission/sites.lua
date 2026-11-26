@@ -1,11 +1,6 @@
 -- Resolve before installing admission. Protocol owns both command transport and
 -- this lobby boundary; no simulation hook or alternative patch manager is used.
-local function find(pattern)
-  local ok, address = pcall(core.AOBScan,pattern)
-  assert(ok and type(address) == 'number' and address > 0 and address%1==0,
-    'Protocol: multiplayer admission binding is unavailable')
-  return address
-end
+local matchesAOB = require('helpers.matchesAOB')
 
 local startPattern = '39 3D ? ? ? ? 0F 84 ? ? ? ? B8 ? ? ? ? 83 C9 FF 39 88 ? ? ? ? 74 08 39 38 0F 84 ? ? ? ? 83 C0 04 3D ? ? ? ? 7C E6 B9 ? ? ? ? E8 ? ? ? ? 83 F8 02'
 local modePattern = '6A 34 B9 ? ? ? ? E8 ? ? ? ? 83 3D ? ? ? ? 63 75 1E 57 89 3D'
@@ -14,10 +9,10 @@ local viewPattern = 'A1 ? ? ? ? 83 F8 37 C7 05 ? ? ? ? 0A 00 00 00 C6 05 ? ? ? ?
 
 local M = {}
 function M.resolve()
-  local start = find(startPattern)
-  local mode = find(modePattern)
-  local player = find(playerPattern)
-  local view = find(viewPattern)
+  local start = core.AOBScan(startPattern)
+  local mode = core.AOBScan(modePattern)
+  local player = core.AOBScan(playerPattern)
+  local view = core.AOBScan(viewPattern)
   local handler = require('protocols.common').MULTIPLAYER_HANDLER_ADDRESS
   -- Both lobby calls must use the transport owner's resolved singleton.
   assert(core.readInteger(start + 47) == handler and core.readInteger(mode + 3) == handler,
@@ -37,14 +32,8 @@ end
 
 -- The site may have been occupied after resolution by a later module.
 function M.verify(sites)
-  local index = 0
-  for token in sites.pattern:gmatch('%S+') do
-    if token ~= '?' then
-      assert(core.readByte(sites.start + index) == tonumber(token, 16),
-        'Protocol: multiplayer Start owner was modified before admission installation')
-    end
-    index = index + 1
-  end
+  assert(matchesAOB(sites.pattern, sites.start),
+    'Protocol: multiplayer Start owner was modified before admission installation')
   assert(core.readInteger(sites.start + 2) == sites.host
       and sites.start + 12 + core.readInteger(sites.start + 8) == sites.reject,
     'Protocol: multiplayer Start operands changed before admission installation')
