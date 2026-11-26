@@ -6,3 +6,5 @@ dependencies:
   files: "^1.4.0"
 meta:
   version: 1.0.0
+tags:
+- tools
