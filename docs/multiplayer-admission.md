@@ -1,44 +1,51 @@
 # Multiplayer content admission
 
-Protocol 1.1.0 adds `registerMultiplayerAdmission(name, capture, notify)` and
-`multiplayerAdmissionVersion() == 1`. An opted-in extension's capture callback
-freezes its settings and returns their lowercase SHA256. Register before
-`afterInit`; no provider may be added after the first admission exchange.
-Without a provider, existing Protocol behavior and native Start remain unchanged.
+`registerMultiplayerAdmission(name, capture, notify)` adds a provider;
+`multiplayerAdmissionVersion()` returns 1. A provider's `capture` freezes its
+settings and returns their lowercase SHA256. Register before `afterInit`; no
+provider can be added after the first admission exchange. `registerMultiplayerAdmission`
+returns false when admission is off on this game (see below). Without a provider,
+Protocol and the native Start action behave as without admission.
 
-On the first admission check, the framework VFS and streaming SHA256 fingerprint active extension
-files, their load order, referenced option files/directories and the framework
-version file. Directory/archive shadowing follows Recorder's existing
-`code/replay-assets.lua` rule (source aaa3e82). The full resolved configuration
-and sorted provider names/digests enter a typed, length-framed SHA256 at admission.
-This is content agreement, not protection against deliberately modified clients.
-All peers must use the same extension content, order and configuration; unrelated
-local configuration differences can conservatively reject admission.
+## What is compared
 
-On a multiplayer host's Start action, admission checks agreement before the
-existing readiness/map checks, RNG seed or start command 11. Single-player and
-spectator paths retain their original instructions. The original
-host/readiness/launch owners still perform the start.
+On the first admission check of a session, Protocol hashes the files of every
+active extension (through the Files module's traversal), their load order, files
+and folders named in option values, and `ucp/ucp-version.yml`. The result is kept
+for the session. The full resolved configuration and the sorted provider names
+and digests are added at every check. Strings sort byte by byte and numbers are
+encoded in binary, so PCs with different system locales agree. This is content
+agreement, not protection against deliberately modified clients; unrelated local
+configuration differences can also block Start.
 
-Version 1.1.1 replaces the fixed SHC binding from 1.1.0 with framework AoB
-discovery. See [native binding verification](admission-native-bindings.md) for
-resolution, ownership and exact SHC/Extreme component evidence. Real two-peer
-acceptance remains outstanding.
+The first check hashes everything once with the framework's Lua SHA256, so the
+host's first Start in a session can wait as long as that takes (about 80 seconds
+for some 300 MB of active extensions). Later checks reuse the result.
 
-One 76-byte IMMEDIATE message carries kind, request serial, host slot, complete
-SHA256 and eight native transport handles. Every connected human slot must reply
-with that identity and roster. Missing, stale or mismatched responses block
-Start. Roster changes and host migration require fresh agreement. Clicking
-Start again retries missing replies; it launches only once all replies match.
-The module never auto-launches from a network callback or queues an AI/player
-simulation command. No polling, file reads, hashes or RNG calls enter game ticks.
+## Start
 
-The host reports waiting/mismatch through the framework log and optional
-`notify(reason)` callbacks. AIC Tactics uses the existing chat module's local
-display API; no additional message is broadcast for presentation. Native chat
-font/encoding support limits these messages to ASCII English in this integration.
-The native Start layout and transport/roster assumptions require actual
-two-physical-peer testing; component tests do not establish multiplayer acceptance.
-Limits: 32 providers, 256 extensions, 50,000 file/directory entries, 1 GiB per
-file, 4 GiB total; hashing is streaming and occurs once before the message loop.
-Start-time configuration serialization allows 100,000 values and depth 32.
+On a multiplayer host's Start action, admission runs before the native
+readiness and map checks, the random seed and start command 11. One 76-byte
+IMMEDIATE message carries kind, request serial, host slot, the SHA256 and the
+eight native player handles. Every connected human slot must reply with that
+identity and roster. Missing, stale or mismatched replies block Start; pressing
+Start again retries. Roster changes and host migration need a fresh agreement.
+Protocol never starts a match from a network callback and adds no simulation
+command, polling, file read or hash to game ticks.
+
+The host logs waiting and mismatch, and calls each provider's `notify(reason)`
+with `waiting`, `mismatch` or `error`. Providers own the player-facing text.
+
+## Game sites
+
+Protocol resolves four instruction contexts once, when the first provider
+registers: the host comparison before the readiness loop (Start, return and
+rejection branch), the lobby command-52 call (game mode), the local player slot
+and the current menu view. Both lobby calls must use the transport's command
+handler from `protocols/common.lua`. The Start site is checked again just before
+the patch; the bridge keeps registers, stack and flags, runs the original host
+comparison once and keeps its branch. If a site is missing or differs, admission
+logs a warning and stays off; the command transport keeps working.
+
+Limits: 32 providers, 256 extensions, 50,000 files, 1 GiB per file, 4 GiB in
+total; 100,000 configuration values, nested at most 32 deep.
