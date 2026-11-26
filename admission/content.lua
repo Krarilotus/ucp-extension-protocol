@@ -4,7 +4,7 @@ local M={}
 -- The digest is compared between PCs, so strings sort byte by byte (Lua's `<` uses
 -- strcoll) and numbers are not formatted as decimals; the framework's setup digest
 -- follows the same rules.
-local function lessBytes(a,b)
+function M.lessBytes(a,b)
   for i=1,math.min(#a,#b) do
     local x,y=a:byte(i),b:byte(i)
     if x~=y then return x<y end
@@ -31,7 +31,7 @@ function M.canonical(value)
       end
       table.sort(keys,function(a,b)
         if type(a)~=type(b) then return type(a)<type(b) end
-        if type(a)=='string' then return lessBytes(a,b) end
+        if type(a)=='string' then return M.lessBytes(a,b) end
         return a<b
       end)
       local items={'t'..#keys..':'}

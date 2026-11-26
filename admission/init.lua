@@ -1,11 +1,15 @@
 local M={providers={},installed=false}
-local function identity()
-  local content=require('admission.content')
-  -- Hashed on the first lobby admission check and cached for the session.
-  M.contentHash=M.contentHash or content.capture(allActiveExtensions,configFinal)
+local content=require('admission.content')
+local function providerNames()
   local names={}
   for name in pairs(M.providers) do names[#names+1]=name end
-  table.sort(names)
+  table.sort(names,content.lessBytes)
+  return names
+end
+local function identity()
+  -- Hashed on the first lobby admission check and cached for the session.
+  M.contentHash=M.contentHash or content.capture(allActiveExtensions,configFinal)
+  local names=providerNames()
   local values={'protocol-admission-v1\n',M.contentHash,'\n',
     content.canonical(assert(configFinal,'Resolved multiplayer settings are unavailable')),'\n'}
   for _,name in ipairs(names) do
@@ -50,11 +54,7 @@ function M.register(protocol,name,capture,notify)
         roster=native.roster,isHost=native.isHost,inLobby=native.inLobby,
         send=function(message) protocol:invokeCustomProtocol(number,message) end,
       })
-      number=protocol:registerCustomProtocol('protocol','content-admission-v1','IMMEDIATE',76,{
-        schedule=function(self,meta,message) write(meta,message) end,
-        execute=function(self,meta) consensus.receive(meta.player,read(meta)) end,
-      })
-      native.install(function()
+      local activate=native.prepare(function()
         if not native.inLobby() then return false end
         local ok,allowed,reason=pcall(consensus.start)
         if not ok then
@@ -64,16 +64,18 @@ function M.register(protocol,name,capture,notify)
         if not allowed then
           log(WARNING,reason=='mismatch' and 'Multiplayer setups differ; all players need the same extensions and settings.'
             or 'Checking multiplayer settings. Press Start again after all players have responded.')
-          local names={}
-          for key in pairs(M.providers) do names[#names+1]=key end
-          table.sort(names)
-          for _,key in ipairs(names) do
+          for _,key in ipairs(providerNames()) do
             local callback=M.providers[key].notify
             if callback then callback(reason) end
           end
         end
         return allowed
       end)
+      number=protocol:registerCustomProtocol('protocol','content-admission-v1','IMMEDIATE',76,{
+        schedule=function(self,meta,message) write(meta,message) end,
+        execute=function(self,meta) consensus.receive(meta.player,read(meta)) end,
+      })
+      activate()
     end)
     if resolved then M.installed=true
     else

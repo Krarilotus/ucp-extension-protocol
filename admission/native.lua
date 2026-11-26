@@ -16,7 +16,8 @@ function M.inLobby()
   return (mode==1 or mode==2) and core.readInteger(VIEW)==20
 end
 
-function M.install(check)
+-- Everything that can fail runs here; the returned function only writes the Start jump.
+function M.prepare(check)
   assert(not installed,'Protocol: multiplayer admission is already installed')
   -- Preserve the host comparison and its original conditional branch. This
   -- boundary precedes the native seed call observed by Recorder.
@@ -54,7 +55,9 @@ function M.install(check)
     popfd
     jmp REJECT
   ]],{MODE=MODE,HOST=HOST,CALLBACK=callback,RESULT=result,RETURN=RETURN,REJECT=REJECT},bridge))
-  core.writeCode(START,{0xE9,bridge-START-5,0x90})
-  installed=true
+  return function()
+    core.writeCode(START,{0xE9,bridge-START-5,0x90})
+    installed=true
+  end
 end
 return M

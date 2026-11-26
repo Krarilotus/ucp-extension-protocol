@@ -6,7 +6,8 @@ local schedulePattern='56 8B F1 81 BE ? ? ? ? C8 00 00 00 0F 8D 15 02 00 00 80 7
 
 local caller=core.AOBScan(queueCaller)
 local queue=caller+5+core.readInteger(caller+1)
-local schedule=core.AOBScan(schedulePattern)
+-- The transport needs only the scheduler's entry; the replay interface below checks its full body.
+local schedule=core.AOBScan('56 8B F1 81 ? ? ? ? ? ? ? ? ?')
 local queueCommand=core.exposeCode(queue,2,1)
 local scheduleCommand=core.exposeCode(schedule,5,1)
 
